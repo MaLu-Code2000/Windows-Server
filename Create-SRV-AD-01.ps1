@@ -1,0 +1,41 @@
+# Definindo os parâmetros
+$VMName = "SRV-AD-01"
+$MemoryStartupBytes = 2GB
+$VHDPath = "D:\LUC-DIAS\VMS\$VMName\$VMName.vhdx"
+$VHDSize = 127GB
+$VMPath = "D:\LUC-DIAS\VMS\"
+$ProcessorCount = 4
+
+# Criando o diretório para a VM, se não existir
+if (-not (Test-Path -Path "D:\LUC-DIAS\VMS\$VMName")) {
+    New-Item -ItemType Directory -Path "D:\LUC-DIAS\VMS\$VMName"
+}
+
+# Criando a máquina virtual
+try {
+    New-VM -Name $VMName -MemoryStartupBytes $MemoryStartupBytes -Path $VMPath -Generation 2
+} catch {
+    Write-Host "Erro ao criar a máquina virtual: $_"
+    exit
+}
+
+# Adicionando o número de processadores
+Set-VMProcessor -VMName $VMName -Count $ProcessorCount
+
+# Criando o disco virtual dinâmico
+New-VHD -Path $VHDPath -SizeBytes $VHDSize -Dynamic
+
+# Adicionando o disco virtual à VM
+Add-VMHardDiskDrive -VMName $VMName -Path $VHDPath
+
+# Adicionando a interface de rede desconectada
+Add-VMNetworkAdapter -VMName $VMName -SwitchName "None"
+
+# Adicionando a unidade de disco (CD/DVD)
+Add-VMDvdDrive -VMName $VMName
+
+# Configurando a ordem de inicialização para usar o CD/DVD
+Set-VMFirmware -VMName $VMName -FirstBootDevice (Get-VMDvdDrive -VMName $VMName)
+
+# Configuração final
+Write-Host "Máquina virtual $VMName criada com sucesso com 2GB de RAM, 4 núcleos de processamento, disco de 127GB dinâmico, unidade de disco CD/DVD e interface de rede desconectada."
